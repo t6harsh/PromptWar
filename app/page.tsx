@@ -1,150 +1,130 @@
 "use client";
 
-import { motion } from "framer-motion";
-import TopBar from "../components/TopBar";
-import EraView from "../components/EraView";
-import TemporalHUD from "../components/TemporalHUD";
+import dynamic from "next/dynamic";
+import { ChronosProvider } from "../context/ChronosContext";
+import GameHUD from "../components/GameHUD";
+import DialogueBox from "../components/DialogueBox";
+import ActionMenu from "../components/ActionMenu";
+import ErrorBoundary from "../components/ErrorBoundary";
+import ScreenReaderAnnouncer from "../components/ScreenReaderAnnouncer";
 
-export default function Home() {
-  return (
+/**
+ * Lazy-load heavy components to improve initial bundle size and load time.
+ * GameViewport and TimelineSidebar contain the most visual assets.
+ */
+const GameViewport = dynamic(() => import("../components/GameViewport"), {
+  ssr: false,
+  loading: () => (
     <div
-      className="flex flex-col h-screen overflow-hidden relative"
+      className="flex items-center justify-center w-full h-full"
       style={{ background: "var(--chronos-void)" }}
+      role="status"
+      aria-label="Loading game scene"
     >
-      {/* Background ambient effects */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Large orbs */}
-        <motion.div
-          className="absolute"
-          animate={{
-            x: [0, 50, 0],
-            y: [0, -30, 0],
-          }}
-          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-          style={{
-            width: "500px",
-            height: "500px",
-            borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(0,240,255,0.04) 0%, transparent 70%)",
-            top: "10%",
-            left: "30%",
-            filter: "blur(60px)",
-          }}
-        />
-        <motion.div
-          className="absolute"
-          animate={{
-            x: [0, -30, 0],
-            y: [0, 40, 0],
-          }}
-          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-          style={{
-            width: "400px",
-            height: "400px",
-            borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(168,85,247,0.04) 0%, transparent 70%)",
-            bottom: "10%",
-            right: "10%",
-            filter: "blur(60px)",
-          }}
-        />
-        <motion.div
-          className="absolute"
-          animate={{
-            x: [0, 20, 0],
-            y: [0, -20, 0],
-          }}
-          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-          style={{
-            width: "300px",
-            height: "300px",
-            borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(255,215,0,0.03) 0%, transparent 70%)",
-            top: "20%",
-            left: "5%",
-            filter: "blur(50px)",
-          }}
-        />
-      </div>
-
-      {/* Scan lines overlay across entire app */}
-      <div
-        className="absolute inset-0 pointer-events-none z-50"
-        style={{
-          background:
-            "repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(0,240,255,0.008) 2px, rgba(0,240,255,0.008) 4px)",
-        }}
-      />
-
-      {/* Top Bar */}
-      <TopBar />
-
-      {/* Main Content: 3-panel layout */}
-      <div className="flex-1 flex gap-3 p-3 relative z-10 min-h-0">
-        {/* Left Panel — THE PAST */}
-        <motion.div
-          initial={{ opacity: 0, x: -30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="glass-panel shimmer-border flex-1 overflow-hidden"
-          style={{ minWidth: 0 }}
-        >
-          <EraView era="past" />
-        </motion.div>
-
-        {/* Center Panel — TEMPORAL HUD */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-          className="glass-panel shimmer-border overflow-hidden"
-          style={{ flex: "1.5", minWidth: 0 }}
-        >
-          <TemporalHUD />
-        </motion.div>
-
-        {/* Right Panel — THE FUTURE */}
-        <motion.div
-          initial={{ opacity: 0, x: 30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
-          className="glass-panel shimmer-border flex-1 overflow-hidden"
-          style={{ minWidth: 0 }}
-        >
-          <EraView era="future" />
-        </motion.div>
-      </div>
-
-      {/* Bottom status bar */}
-      <div
-        className="flex items-center justify-between px-6 py-1.5 border-t relative z-10"
-        style={{
-          background: "rgba(5, 5, 16, 0.8)",
-          borderColor: "var(--glass-border)",
-        }}
-      >
-        <div className="flex items-center gap-4">
-          <span style={{ fontSize: "9px", color: "var(--text-muted)", letterSpacing: "1.5px" }}>
-            CHRONOS ENGINE v4.2.0-ALPHA
-          </span>
-          <span style={{ fontSize: "9px", color: "var(--neon-cyan-dim)" }}>|</span>
-          <span style={{ fontSize: "9px", color: "var(--text-muted)", letterSpacing: "1px" }}>
-            GEMINI 3 PRO — DEEP THINK
-          </span>
-        </div>
-        <div className="flex items-center gap-4">
-          <span style={{ fontSize: "9px", color: "var(--text-muted)", letterSpacing: "1px" }}>
-            GENIE 3 — WORLD MODEL ACTIVE
-          </span>
-          <span style={{ fontSize: "9px", color: "var(--neon-cyan-dim)" }}>|</span>
-          <div className="flex items-center gap-1.5">
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--neon-cyan)", boxShadow: "0 0 4px var(--neon-cyan)" }} />
-            <span style={{ fontSize: "9px", color: "var(--neon-cyan)", letterSpacing: "1px" }}>
-              ALL SYSTEMS NOMINAL
-            </span>
-          </div>
-        </div>
+      <div style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)", fontSize: "13px" }}>
+        Loading temporal matrix...
       </div>
     </div>
+  ),
+});
+
+const TimelineSidebar = dynamic(() => import("../components/TimelineSidebar"), {
+  ssr: false,
+  loading: () => (
+    <div
+      style={{ width: "220px", background: "rgba(5,5,16,0.85)" }}
+      role="status"
+      aria-label="Loading timeline"
+    />
+  ),
+});
+
+/**
+ * Main game page for Chronos Paradox.
+ * Assembles the game layout: HUD (top), TimelineSidebar (left),
+ * GameViewport with DialogueBox overlay (center), ActionMenu (bottom).
+ */
+export default function Home() {
+  return (
+    <ErrorBoundary>
+      <ChronosProvider>
+        {/* Skip to main content link for keyboard users */}
+        <a
+          href="#game-viewport"
+          className="sr-only"
+          style={{
+            position: "absolute",
+            left: "-9999px",
+            top: "auto",
+            width: "1px",
+            height: "1px",
+            overflow: "hidden",
+            zIndex: 9999,
+          }}
+          onFocus={(e) => {
+            const el = e.currentTarget;
+            el.style.position = "fixed";
+            el.style.left = "50%";
+            el.style.top = "10px";
+            el.style.transform = "translateX(-50%)";
+            el.style.width = "auto";
+            el.style.height = "auto";
+            el.style.overflow = "visible";
+            el.style.padding = "8px 16px";
+            el.style.background = "var(--chronos-deep)";
+            el.style.color = "var(--neon-cyan)";
+            el.style.border = "1px solid var(--neon-cyan)";
+            el.style.borderRadius = "6px";
+            el.style.fontFamily = "var(--font-body)";
+            el.style.fontSize = "13px";
+          }}
+          onBlur={(e) => {
+            const el = e.currentTarget;
+            el.style.position = "absolute";
+            el.style.left = "-9999px";
+            el.style.width = "1px";
+            el.style.height = "1px";
+          }}
+        >
+          Skip to game viewport
+        </a>
+
+        {/* Screen reader announcer */}
+        <ScreenReaderAnnouncer />
+
+        <div
+          className="flex flex-col h-screen"
+          style={{
+            background: "var(--chronos-void)",
+            color: "var(--text-primary)",
+            overflow: "hidden",
+          }}
+        >
+          {/* Top: Game HUD */}
+          <GameHUD />
+
+          {/* Main content */}
+          <div className="flex flex-1 overflow-hidden">
+            {/* Left: Timeline */}
+            <TimelineSidebar />
+
+            {/* Center: Game Viewport */}
+            <div className="flex flex-col flex-1 overflow-hidden">
+              <div
+                id="game-viewport"
+                className="relative flex-1 overflow-hidden"
+                tabIndex={-1}
+              >
+                <GameViewport />
+                <DialogueBox />
+              </div>
+
+              {/* Bottom: Action Menu */}
+              <ActionMenu />
+            </div>
+          </div>
+        </div>
+      </ChronosProvider>
+    </ErrorBoundary>
   );
 }
