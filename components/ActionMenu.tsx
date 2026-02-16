@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useRef } from "react";
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import { useChronos } from "../context/ChronosContext";
 
 /** Action configuration for menu buttons */

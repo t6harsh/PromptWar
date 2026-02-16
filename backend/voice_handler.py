@@ -77,7 +77,7 @@ class VoiceHandler:
     Extracts intent, target era, sentiment, and maps to temporal actions.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.client = None
         api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
         if GEMINI_AVAILABLE and api_key:

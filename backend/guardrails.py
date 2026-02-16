@@ -105,7 +105,7 @@ class ParadoxLimiter:
     WARNING_THRESHOLD = 0.70  # Above this = warning
     COOLDOWN_RATE = 0.05      # How much paradox decays per action
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.paradox_accumulator = 0.0
         self.gridlock_count = 0
         self.actions_since_gridlock = 0
@@ -166,7 +166,7 @@ class TemporalEthicsBoard:
     Combines narrative safety and paradox limiting into a unified guardrail.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.safety_filter = NarrativeSafetyFilter()
         self.paradox_limiter = ParadoxLimiter()
 

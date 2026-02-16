@@ -11,16 +11,18 @@ from logic_engine import TemporalLogicEngine
 from genie_bridge import GenieBridge
 from voice_handler import VoiceHandler
 from guardrails import TemporalEthicsBoard
+from visuals import ImageGenerator
 
 # ─── Initialize ───
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:3000", "http://localhost:3001"])
+CORS(app)
 
 engine = TemporalLogicEngine()
 genie = GenieBridge()
 voice = VoiceHandler()
 ethics = TemporalEthicsBoard()
+visuals = ImageGenerator()
 
 
 # ─── Health Check ───
@@ -175,7 +177,25 @@ def guardrails_status():
     })
 
 
+# ─── Visual Generation ───
+
+@app.route("/api/visuals/generate", methods=["POST"])
+def generate_visual():
+    """
+    Generate a scene image using Imagen 3.
+    """
+    data = request.get_json()
+    prompt = data.get("prompt", "")
+    era = data.get("era", "Unknown")
+
+    if not prompt:
+        return jsonify({"error": "No prompt provided"}), 400
+
+    result = visuals.generate_scene(prompt, era)
+    return jsonify(result)
+
+
 # ─── Run ───
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000, host="0.0.0.0")
+    app.run(debug=False, port=5000, host="0.0.0.0")

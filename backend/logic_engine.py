@@ -90,7 +90,7 @@ across multiple eras. You must:
 
 Respond in JSON with keys: affected_eras, paradox_risk, narrative_changes, world_state_delta"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.anchors: dict[str, TemporalAnchor] = {}
         self.causal_links: list[CausalLink] = []
         self.branches: dict[str, TimelineBranch] = {}
@@ -109,7 +109,7 @@ Respond in JSON with keys: affected_eras, paradox_risk, narrative_changes, world
         # Seed the default timeline
         self._seed_timeline()
 
-    def _seed_timeline(self):
+    def _seed_timeline(self) -> None:
         """Create the default timeline with canonical anchor points."""
         default_anchors = [
             TemporalAnchor("n1", 800, "Dark Ages", "The Awakening",

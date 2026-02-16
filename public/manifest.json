@@ -1,0 +1,22 @@
+{
+    "name": "Chronos Paradox",
+    "short_name": "Chronos",
+    "description": "An AI-native JRPG where your choices ripple through time. Fix paradoxes and rewrite history.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#050510",
+    "theme_color": "#050510",
+    "icons": [
+        {
+            "src": "/game/hero.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/game/hero.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "orientation": "portrait"
+}

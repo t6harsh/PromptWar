@@ -7,7 +7,16 @@ context that updates when the timeline shifts.
 """
 
 import random
+import os
+import json
 from dataclasses import dataclass, field, asdict
+
+try:
+    from google import genai
+    GEMINI_AVAILABLE = True
+except ImportError:
+    GEMINI_AVAILABLE = False
+
 
 
 @dataclass
@@ -155,6 +164,42 @@ class GenieBridge:
     def __init__(self):
         self.world_states: dict[str, EraWorldState] = {}
         self._initialize_worlds()
+        self.client = None
+        
+        api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+        if GEMINI_AVAILABLE and api_key:
+            try:
+                self.client = genai.Client(api_key=api_key)
+            except Exception:
+                self.client = None
+
+    def _gemini_enhance(self, state: EraWorldState) -> dict:
+        """Use Gemini to generate vivid, dynamic environment details."""
+        if not self.client:
+            return {}
+
+        prompt = f"""Generate a vivid, 3-sentence description of the current environment for a time travel game.
+Era: {state.era} ({state.year})
+Mood: {state.mood}
+Tech Level: {state.tech_level}/10
+Stability: {state.stability}%
+
+Return JSON with keys:
+- lighting: visual description of light
+- particles: description of airborne particles/effects
+- ambient_sound: description of background audio
+- architecture_detail: a specific architectural feature visible now
+"""
+        try:
+            response = self.client.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=prompt,
+                config={"response_mime_type": "application/json"}
+            )
+            return json.loads(response.text)
+        except Exception:
+            return {}
+
 
     def _initialize_worlds(self):
         """Create default world states from templates."""
@@ -227,10 +272,14 @@ class GenieBridge:
         if not state:
             return {"error": "Era not found"}
 
-        # Procedural scene generation
-        lighting = "warm amber" if state.year < 1800 else "cool neon"
-        particle = "dust motes" if state.year < 1800 else "data streams"
-        ambient = "crackling fire" if state.year < 1800 else "electronic hum"
+        # Try dynamic enhancement
+        dynamic = self._gemini_enhance(state)
+        
+        # Fallback procedural scene generation
+        lighting = dynamic.get("lighting", "warm amber" if state.year < 1800 else "cool neon")
+        particle = dynamic.get("particles", "dust motes" if state.year < 1800 else "data streams")
+        ambient = dynamic.get("ambient_sound", "crackling fire" if state.year < 1800 else "electronic hum")
+        arch_detail = dynamic.get("architecture_detail", state.architecture)
 
         return {
             "era": era,
@@ -239,7 +288,7 @@ class GenieBridge:
                 "particles": particle,
                 "ambient_sound": ambient,
                 "weather": state.weather,
-                "architecture": state.architecture,
+                "architecture": arch_detail,
                 "visual_style": state.visual_style,
             },
             "characters": {

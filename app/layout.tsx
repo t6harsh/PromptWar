@@ -26,25 +26,36 @@ export const viewport: Viewport = {
  * Root layout for the Chronos Paradox application.
  * Sets up HTML structure, fonts, and global styles.
  */
+import { Providers } from "../components/Providers";
+import { Space_Grotesk, Orbitron } from "next/font/google";
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-space",
+  display: "swap",
+});
+
+const orbitron = Orbitron({
+  subsets: ["latin"],
+  variable: "--font-orbitron",
+  display: "swap",
+});
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className={`dark ${spaceGrotesk.variable} ${orbitron.variable}`}>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap"
-          rel="stylesheet"
-        />
         {/* Preload critical game assets */}
         <link rel="preload" as="image" href="/game/renaissance.png" />
         <link rel="preload" as="image" href="/game/hero.png" />
       </head>
-      <body>{children}</body>
+      <body className="antialiased font-sans bg-gray-900 text-white selection:bg-cyan-500/30">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

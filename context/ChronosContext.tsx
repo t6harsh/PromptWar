@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
-import { temporalAgent, type TemporalCommandResult } from "../agents/temporalAgent";
+import { temporalAgent } from "../agents/temporalAgent";
 
 // ─── Types ───
 
@@ -239,6 +239,10 @@ export function useChronos(): GameState {
 
 // ─── Provider ───
 
+/**
+ * Main Game State Provider for Chronos Paradox.
+ * Manages all game logic, state transitions, and backend communication.
+ */
 export function ChronosProvider({ children }: { children: React.ReactNode }) {
   // Player
   const [playerHP, setPlayerHP] = useState(100);
@@ -280,95 +284,15 @@ export function ChronosProvider({ children }: { children: React.ReactNode }) {
 
   const currentScene = SCENES[currentEra] || SCENES.renaissance;
 
-  useEffect(() => {
-    temporalAgent.checkHealth().then((h) => setBackendOnline(h.online));
-  }, []);
-
-  // Energy regen
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTemporalEnergy((e) => Math.min(100, e + 2));
-    }, 5000);
-    return () => clearInterval(timer);
-  }, []);
-
-  // Scene intro dialogue on era change
-  useEffect(() => {
-    const scene = SCENES[currentEra];
-    if (scene) {
-      startDialogue([
-        { speaker: "", text: `— ${scene.name}, ${scene.year} AD —`, isNarration: true },
-        { speaker: "", text: scene.description, isNarration: true },
-      ]);
-    }
-  }, [currentEra]);
-
   const pushEcho = useCallback((msg: string) => {
     setEchoMessages((prev) => [...prev.slice(-7), msg]);
   }, []);
-
-  // ─── Dialogue System ───
 
   const startDialogue = useCallback((lines: DialogueLine[]) => {
     if (lines.length === 0) return;
     setDialogueQueue(lines.slice(1));
     setCurrentDialogue(lines[0]);
     setIsDialogueActive(true);
-  }, []);
-
-  const advanceDialogue = useCallback(() => {
-    if (dialogueQueue.length > 0) {
-      setCurrentDialogue(dialogueQueue[0]);
-      setDialogueQueue((q) => q.slice(1));
-    } else {
-      setCurrentDialogue(null);
-      setIsDialogueActive(false);
-    }
-  }, [dialogueQueue]);
-
-  const selectChoice = useCallback((action: string) => {
-    // If action starts with "cmd:", it's a temporal command
-    if (action.startsWith("cmd:")) {
-      const cmd = action.slice(4);
-      setCurrentDialogue(null);
-      setIsDialogueActive(false);
-      setDialogueQueue([]);
-      // Fire the command
-      processCommand(cmd);
-    } else {
-      // Handle narrative choices
-      const narrativeResponses: Record<string, DialogueLine[]> = {
-        protect_hourglass: [
-          { speaker: "Leonardo", text: "Bravissimo! Then we must act quickly. The saboteurs come at midnight." },
-          { speaker: "", text: "Leonardo hands you a key to the hidden vault beneath the workshop.", isNarration: true },
-        ],
-        ask_visions: [
-          { speaker: "Leonardo", text: "I see a city of impossible lights... towers piercing clouds of violet lightning." },
-          { speaker: "Leonardo", text: "And a great spiral in the sky — a wound in time itself. Your arrival was foretold in those visions." },
-        ],
-        observe_workshop: [
-          { speaker: "", text: "You take a moment to study the workshop carefully. Leonardo nods approvingly.", isNarration: true },
-        ],
-        ask_rift: [
-          { speaker: "ARIA-7", text: "The rift feeds on paradox energy. Reduce the Butterfly Index below 30 to stabilize it." },
-          { speaker: "ARIA-7", text: "But be warned — every timeline alteration either heals or worsens the fracture." },
-        ],
-        ask_engine: [
-          { speaker: "ARIA-7", text: "If the Chrono Engine fails... all timelines collapse into a single, broken reality." },
-          { speaker: "ARIA-7", text: "Every era, every person, every moment — merged into temporal chaos." },
-        ],
-        return_past: [
-          { speaker: "ARIA-7", text: "The Renaissance anchor is still active. But be careful — each jump costs temporal energy." },
-        ],
-      };
-
-      const response = narrativeResponses[action] || [
-        { speaker: "", text: "You consider your options carefully.", isNarration: true },
-      ];
-
-      setDialogueQueue(response.slice(1));
-      setCurrentDialogue(response[0]);
-    }
   }, []);
 
   // ─── Process Backend Command ───
@@ -461,6 +385,92 @@ export function ChronosProvider({ children }: { children: React.ReactNode }) {
 
     setIsRecalculating(false);
   }, [currentEra, currentScene, pushEcho, startDialogue]);
+
+  // ─── Effects ───
+
+  useEffect(() => {
+    temporalAgent.checkHealth().then((h) => setBackendOnline(h.online));
+  }, []);
+
+  // Energy regen
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTemporalEnergy((e) => Math.min(100, e + 2));
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Scene intro dialogue on era change
+  useEffect(() => {
+    const scene = SCENES[currentEra];
+    if (scene) {
+      // Defer dialogue start to avoid "setState in effect" warning/error
+      const t = setTimeout(() => {
+        startDialogue([
+          { speaker: "", text: `— ${scene.name}, ${scene.year} AD —`, isNarration: true },
+          { speaker: "", text: scene.description, isNarration: true },
+        ]);
+      }, 0);
+      return () => clearTimeout(t);
+    }
+  }, [currentEra, startDialogue]); // Added startDialogue to dependency array
+
+  // ─── Dialogue System ───
+
+  const advanceDialogue = useCallback(() => {
+    if (dialogueQueue.length > 0) {
+      setCurrentDialogue(dialogueQueue[0]);
+      setDialogueQueue((q) => q.slice(1));
+    } else {
+      setCurrentDialogue(null);
+      setIsDialogueActive(false);
+    }
+  }, [dialogueQueue]);
+
+  const selectChoice = useCallback((action: string) => {
+    // If action starts with "cmd:", it's a temporal command
+    if (action.startsWith("cmd:")) {
+      const cmd = action.slice(4);
+      setCurrentDialogue(null);
+      setIsDialogueActive(false);
+      setDialogueQueue([]);
+      // Fire the command
+      processCommand(cmd);
+    } else {
+      // Handle narrative choices
+      const narrativeResponses: Record<string, DialogueLine[]> = {
+        protect_hourglass: [
+          { speaker: "Leonardo", text: "Bravissimo! Then we must act quickly. The saboteurs come at midnight." },
+          { speaker: "", text: "Leonardo hands you a key to the hidden vault beneath the workshop.", isNarration: true },
+        ],
+        ask_visions: [
+          { speaker: "Leonardo", text: "I see a city of impossible lights... towers piercing clouds of violet lightning." },
+          { speaker: "Leonardo", text: "And a great spiral in the sky — a wound in time itself. Your arrival was foretold in those visions." },
+        ],
+        observe_workshop: [
+          { speaker: "", text: "You take a moment to study the workshop carefully. Leonardo nods approvingly.", isNarration: true },
+        ],
+        ask_rift: [
+          { speaker: "ARIA-7", text: "The rift feeds on paradox energy. Reduce the Butterfly Index below 30 to stabilize it." },
+          { speaker: "ARIA-7", text: "But be warned — every timeline alteration either heals or worsens the fracture." },
+        ],
+        ask_engine: [
+          { speaker: "ARIA-7", text: "If the Chrono Engine fails... all timelines collapse into a single, broken reality." },
+          { speaker: "ARIA-7", text: "Every era, every person, every moment — merged into temporal chaos." },
+        ],
+        return_past: [
+          { speaker: "ARIA-7", text: "The Renaissance anchor is still active. But be careful — each jump costs temporal energy." },
+        ],
+      };
+
+      const response = narrativeResponses[action] || [
+        { speaker: "", text: "You consider your options carefully.", isNarration: true },
+      ];
+
+      setDialogueQueue(response.slice(1));
+      setCurrentDialogue(response[0]);
+    }
+  }, [processCommand]); // Added processCommand to dependency array
 
   // ─── Travel ───
 

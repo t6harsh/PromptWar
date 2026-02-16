@@ -1,9 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 
 export default function ChronosLogo({ size = 40 }: { size?: number }) {
-  const scale = size / 40;
 
   return (
     <motion.svg

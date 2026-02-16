@@ -9,7 +9,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: blob: https:",
-      "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.google-analytics.com http://localhost:5000",
+      "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.google-analytics.com",
       "frame-ancestors 'none'",
     ].join("; "),
   },
@@ -23,6 +23,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  reactStrictMode: true,
 
   async headers() {
     return [
@@ -33,10 +34,27 @@ const nextConfig: NextConfig = {
     ];
   },
 
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: "http://localhost:5000/api/:path*",
+      },
+    ];
+  },
+
   images: {
     formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 828, 1200, 1920],
   },
 };
 
-export default nextConfig;
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const withPWA = require("next-pwa")({
+  dest: "public",
+  disable: process.env.NODE_ENV === "development",
+  register: true,
+  skipWaiting: true,
+});
+
+export default withPWA(nextConfig);

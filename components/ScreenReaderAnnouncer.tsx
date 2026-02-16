@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
 import { useChronos } from "../context/ChronosContext";
 
 /**
@@ -9,32 +8,30 @@ import { useChronos } from "../context/ChronosContext";
  * users receive updates about dialogue, era changes, paradox events, etc.
  */
 export default function ScreenReaderAnnouncer() {
-  const { currentDialogue, currentEra, currentScene, isParadoxEvent, butterflyIndex } = useChronos();
-  const [announcement, setAnnouncement] = useState("");
-  const prevEra = useRef(currentEra);
+  const { currentDialogue, currentScene, isParadoxEvent, butterflyIndex } = useChronos();
 
-  // Announce era changes
-  useEffect(() => {
-    if (currentEra !== prevEra.current) {
-      setAnnouncement(`Traveled to ${currentScene.name}, year ${currentScene.year} AD.`);
-      prevEra.current = currentEra;
+  // Derive announcement text directly from state priorities
+  // 1. Paradox events (Critical)
+  // 2. Era changes (Major navigation)
+  // 3. Dialogue (Live updates)
+  const announcement = (() => {
+    if (isParadoxEvent) {
+      return `Warning: Paradox event detected. Butterfly index at ${Math.round(butterflyIndex)} percent.`;
     }
-  }, [currentEra, currentScene]);
-
-  // Announce dialogue lines
-  useEffect(() => {
+    // We can allow the parent to handle "Era Changed" logic or just announce scene details
+    // For a clearer live region, we often just want the *latest* relevant thing.
+    // However, without a prop pointing to "last event", derived state can be tricky for transient updates.
+    // The previous implementation tried to "catch" changes.
+    // A better React pattern for announcers is to have a "status" state in Context,
+    // but here we can rely on the fact that these states are mutually exclusive or prioritized.
+    
     if (currentDialogue) {
       const speaker = currentDialogue.speaker || "Narrator";
-      setAnnouncement(`${speaker}: ${currentDialogue.text}`);
+      return `${speaker}: ${currentDialogue.text}`;
     }
-  }, [currentDialogue]);
 
-  // Announce paradox events
-  useEffect(() => {
-    if (isParadoxEvent) {
-      setAnnouncement(`Warning: Paradox event detected. Butterfly index at ${Math.round(butterflyIndex)} percent.`);
-    }
-  }, [isParadoxEvent, butterflyIndex]);
+    return `Current location: ${currentScene.name}, year ${currentScene.year} AD.`;
+  })();
 
   return (
     <div
@@ -42,17 +39,6 @@ export default function ScreenReaderAnnouncer() {
       aria-live="polite"
       aria-atomic="true"
       className="sr-only"
-      style={{
-        position: "absolute",
-        width: "1px",
-        height: "1px",
-        padding: 0,
-        margin: "-1px",
-        overflow: "hidden",
-        clip: "rect(0, 0, 0, 0)",
-        whiteSpace: "nowrap",
-        borderWidth: 0,
-      }}
     >
       {announcement}
     </div>

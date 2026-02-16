@@ -5,3 +5,9 @@ npm-debug.log
 README.md
 .next
 .git
+__tests__
+.pytest_cache
+backend/.pytest_cache
+backend/tests
+*.md
+.env.local
